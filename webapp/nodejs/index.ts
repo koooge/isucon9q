@@ -1073,6 +1073,7 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
     }
 
     if (targetItem.status !== ItemStatusOnSale) {
+        console.log('item is not for sale');
         replyError(reply, "item is not for sale", 403);
         await db.rollback();
         await db.release();
@@ -1080,6 +1081,7 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
     }
 
     if (targetItem.seller_id === buyer.id) {
+        console.log('自分の商品は買えません');
         replyError(reply, "自分の商品は買えません", 403);
         await db.rollback();
         await db.release();
