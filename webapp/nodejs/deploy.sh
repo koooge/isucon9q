@@ -12,6 +12,7 @@ sudo systemctl restart nginx.service
 
 sudo cp ../../conf/my.cnf /etc/mysql
 sudo systemctl restart mysql.service
+/home/isucon/isucari/webapp/sql/init.sh
 
 sudo cp ../../conf/isucari.nodejs.service /etc/systemd/system/
 
