@@ -1022,7 +1022,6 @@ async function postItemEdit(req: FastifyRequest, reply: FastifyReply<ServerRespo
 }
 
 async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>) {
-    console.time("post buy: postBuy");
 
     const csrfToken = req.body.csrf_token;
 
@@ -1032,9 +1031,7 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
     }
 
     const db = await getDBConnection();
-    console.time("post buy: getLoginUser");
     const buyer = await getLoginUser(req, db);
-    console.timeEnd("post buy: getLoginUser");
 
     if (buyer === null) {
         replyError(reply, "no session", 404);
@@ -1042,7 +1039,6 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
         return;
     }
 
-    console.time("post buy: postBuy select data");
     await db.beginTransaction();
 
     let targetItem: Item | null = null;
@@ -1062,7 +1058,6 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
     }
 
     if (targetItem.status !== ItemStatusOnSale) {
-        console.log('item is not for sale');
         replyError(reply, "item is not for sale", 403);
         await db.rollback();
         await db.release();
@@ -1070,7 +1065,6 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
     }
 
     if (targetItem.seller_id === buyer.id) {
-        console.log('自分の商品は買えません');
         replyError(reply, "自分の商品は買えません", 403);
         await db.rollback();
         await db.release();
@@ -1091,9 +1085,7 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
         await db.release();
         return;
     }
-    console.timeEnd("post buy: postBuy select data");
 
-    console.time("post buy: getCategoryByID");
     const category = await getCategoryByID(db, targetItem.category_id);
     if (category === null) {
         replyError(reply, "category id error", 500);
@@ -1101,9 +1093,7 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
         await db.release();
         return;
     }
-    console.timeEnd("post buy: getCategoryByID");
 
-    console.time("post buy: insert data");
     const [result] = await db.query(
         "INSERT INTO `transaction_evidences` (`seller_id`, `buyer_id`, `status`, `item_id`, `item_name`, `item_price`, `item_description`,`item_category_id`,`item_root_category_id`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         [
@@ -1130,11 +1120,9 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
             targetItem.id,
         ]
     )
-    console.timeEnd("post buy: insert data");
 
 
     try {
-        console.time("post buy: paymentToken");
 
         const promises = [];
 
@@ -1176,9 +1164,7 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
                 return;
             }
 
-            console.timeEnd("post buy: paymentToken");
 
-            console.time("post buy: insert shippiing");
 
             await db.query(
                 "INSERT INTO `shippings` (`transaction_evidence_id`, `status`, `item_name`, `item_id`, `reserve_id`, `reserve_time`, `to_address`, `to_name`, `from_address`, `from_name`, `img_binary`) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
@@ -1196,7 +1182,6 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
                     "",
                 ]
             );
-            console.timeEnd("post buy: insert shippiing");
 
         } catch (e) {
             replyError(reply, "payment service is failed", 500)
@@ -1214,7 +1199,6 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
     await db.commit();
     await db.release();
 
-    console.timeEnd("post buy: postBuy");
 
     reply.code(200)
         .type("application/json;charset=utf-8")
@@ -1232,33 +1216,28 @@ async function postSell(req: FastifyRequest, reply: FastifyReply<ServerResponse>
     const categoryIdStr = req.body.category_id;
 
     if (csrfToken !== req.cookies.csrf_token) {
-        console.log("csrf token error");
         replyError(reply, "csrf token error", 422);
         return;
     }
 
     const categoryId: number = parseInt(categoryIdStr, 10);
     if (isNaN(categoryId) || categoryId < 0) {
-        console.log("category id error");
         replyError(reply, "category id error", 400);
         return;
     }
 
     const price: number = parseInt(priceStr, 10);
     if (isNaN(price) || price < 0) {
-        console.log("price error");
         replyError(reply, "price error", 400);
         return;
     }
 
     if (price < ItemMinPrice || price > ItemMaxPrice) {
-        console.log(ItemPriceErrMsg);
         replyError(reply, ItemPriceErrMsg, 400);
         return;
     }
 
     if (name === null || name === "" || description === null || description === "" || price === 0 || categoryId === 0) {
-        console.log("all parameters are required");
         replyError(reply, "all parameters are required", 400);
     }
 
@@ -1266,7 +1245,6 @@ async function postSell(req: FastifyRequest, reply: FastifyReply<ServerResponse>
 
     const category = await getCategoryByID(db, categoryId);
     if (category === null || category.parent_id === 0) {
-        console.log("Incorrect category ID");
         replyError(reply, "Incorrect category ID", 400);
         await db.release();
         return;
@@ -1275,7 +1253,6 @@ async function postSell(req: FastifyRequest, reply: FastifyReply<ServerResponse>
     const user = await getLoginUser(req, db);
 
     if (user === null) {
-        console.log("no session");
         replyError(reply, "no session", 404);
         await db.release();
         return;
@@ -1283,7 +1260,6 @@ async function postSell(req: FastifyRequest, reply: FastifyReply<ServerResponse>
 
     let ext = path.extname(req.body.image[0].filename);
     if (![".jpg", ".jpeg", ".png", ".gif"].includes(ext)) {
-        console.log("unsupported image format error");
         replyError(reply, "unsupported image format error", 400);
         await db.release();
         return;
@@ -1309,7 +1285,6 @@ async function postSell(req: FastifyRequest, reply: FastifyReply<ServerResponse>
     }
 
     if (seller === null) {
-        console.log("user not found");
         replyError(reply, "user not found", 404);
         await db.rollback();
         await db.release();
