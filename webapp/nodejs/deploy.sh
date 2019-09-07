@@ -19,5 +19,3 @@ sudo systemctl daemon-reload
 sudo systemctl restart isucari.nodejs.service
 
 sudo bash -c 'echo > /var/log/nginx/access.log; echo > /var/log/mysql/slow.log;'
-
-sudo journalctl -f
