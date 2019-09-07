@@ -230,7 +230,7 @@ fastify.register(fastifyMultipart, {
 });
 
 fastify.register(fastifyMysql, {
-    host: process.env.MYSQL_HOST || "127.0.0.1",
+	  host: '172.24.201.24',
     port: process.env.MYSQL_PORT || "3306",
     user: process.env.MYSQL_USER || "isucari",
     password: process.env.MYSQL_PASS || "isucari",
@@ -2157,7 +2157,7 @@ async function getLoginUser(req: FastifyRequest, db: MySQLQueryable): Promise<Us
 function getSession(req: FastifyRequest) {
 }
 
-fastify.listen(8000, (err, _address) => {
+fastify.listen(8000, '0.0.0.0', (err, _address) => {
     if (err) {
         throw new TraceError("Failed to listening", err);
     }

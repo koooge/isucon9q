@@ -1,7 +1,7 @@
 #!/bin/bash -ex
 
 cd /home/isucon/isucari/webapp/nodejs
-git pull
+git pull origin master
 
 /home/isucon/local/node/bin/npm i
 
