@@ -5,6 +5,8 @@ git pull
 
 npm i
 
+/home/isucon/isucari/webapp/nodejs/node_modules/.bin/tsc
+
 sudo cp ../../conf/nginx.conf /etc/nginx
 sudo systemctl restart nginx.service
 
