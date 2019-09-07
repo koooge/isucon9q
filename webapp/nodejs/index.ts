@@ -1232,28 +1232,33 @@ async function postSell(req: FastifyRequest, reply: FastifyReply<ServerResponse>
     const categoryIdStr = req.body.category_id;
 
     if (csrfToken !== req.cookies.csrf_token) {
+        console.log("csrf token error");
         replyError(reply, "csrf token error", 422);
         return;
     }
 
     const categoryId: number = parseInt(categoryIdStr, 10);
     if (isNaN(categoryId) || categoryId < 0) {
+        console.log("category id error");
         replyError(reply, "category id error", 400);
         return;
     }
 
     const price: number = parseInt(priceStr, 10);
     if (isNaN(price) || price < 0) {
+        console.log("price error");
         replyError(reply, "price error", 400);
         return;
     }
 
     if (price < ItemMinPrice || price > ItemMaxPrice) {
+        console.log(ItemPriceErrMsg);
         replyError(reply, ItemPriceErrMsg, 400);
         return;
     }
 
     if (name === null || name === "" || description === null || description === "" || price === 0 || categoryId === 0) {
+        console.log("all parameters are required");
         replyError(reply, "all parameters are required", 400);
     }
 
@@ -1261,6 +1266,7 @@ async function postSell(req: FastifyRequest, reply: FastifyReply<ServerResponse>
 
     const category = await getCategoryByID(db, categoryId);
     if (category === null || category.parent_id === 0) {
+        console.log("Incorrect category ID");
         replyError(reply, "Incorrect category ID", 400);
         await db.release();
         return;
@@ -1269,6 +1275,7 @@ async function postSell(req: FastifyRequest, reply: FastifyReply<ServerResponse>
     const user = await getLoginUser(req, db);
 
     if (user === null) {
+        console.log("no session");
         replyError(reply, "no session", 404);
         await db.release();
         return;
@@ -1276,6 +1283,7 @@ async function postSell(req: FastifyRequest, reply: FastifyReply<ServerResponse>
 
     let ext = path.extname(req.body.image[0].filename);
     if (![".jpg", ".jpeg", ".png", ".gif"].includes(ext)) {
+        console.log("unsupported image format error");
         replyError(reply, "unsupported image format error", 400);
         await db.release();
         return;
@@ -1301,6 +1309,7 @@ async function postSell(req: FastifyRequest, reply: FastifyReply<ServerResponse>
     }
 
     if (seller === null) {
+        console.log("user not found");
         replyError(reply, "user not found", 404);
         await db.rollback();
         await db.release();
