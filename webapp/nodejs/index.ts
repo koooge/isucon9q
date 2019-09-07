@@ -230,7 +230,7 @@ fastify.register(fastifyMultipart, {
 });
 
 fastify.register(fastifyMysql, {
-    host: process.env.MYSQL_HOST || "127.0.0.1",
+	  host: '172.24.201.24',
     port: process.env.MYSQL_PORT || "3306",
     user: process.env.MYSQL_USER || "isucari",
     password: process.env.MYSQL_PASS || "isucari",
