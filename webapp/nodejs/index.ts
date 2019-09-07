@@ -1037,6 +1037,8 @@ async function postItemEdit(req: FastifyRequest, reply: FastifyReply<ServerRespo
 }
 
 async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>) {
+    console.time("post buy: postBuy");
+
     const csrfToken = req.body.csrf_token;
 
     if (csrfToken !== req.cookies.csrf_token) {
@@ -1045,8 +1047,9 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
     }
 
     const db = await getDBConnection();
-
+    console.time("post buy: getLoginUser");
     const buyer = await getLoginUser(req, db);
+    console.timeEnd("post buy: getLoginUser");
 
     if (buyer === null) {
         replyError(reply, "no session", 404);
@@ -1054,6 +1057,7 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
         return;
     }
 
+    console.time("post buy: postBuy select data");
     await db.beginTransaction();
 
     let targetItem: Item | null = null;
@@ -1102,7 +1106,9 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
         await db.release();
         return;
     }
+    console.timeEnd("post buy: postBuy select data");
 
+    console.time("post buy: getCategoryByID");
     const category = await getCategoryByID(db, targetItem.category_id);
     if (category === null) {
         replyError(reply, "category id error", 500);
@@ -1110,7 +1116,9 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
         await db.release();
         return;
     }
+    console.timeEnd("post buy: getCategoryByID");
 
+    console.time("post buy: insert data");
     const [result] = await db.query(
         "INSERT INTO `transaction_evidences` (`seller_id`, `buyer_id`, `status`, `item_id`, `item_name`, `item_price`, `item_description`,`item_category_id`,`item_root_category_id`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         [
@@ -1137,16 +1145,23 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
             targetItem.id,
         ]
     )
+    console.timeEnd("post buy: insert data");
+
 
     try {
+        console.time("post buy: shipmentCreate");
+
         const scr = await shipmentCreate(await getShipmentServiceURL(db), {
             to_address: buyer.address,
             to_name: buyer.account_name,
             from_address: seller.address,
             from_name: seller.account_name,
         });
+        console.timeEnd("post buy: shipmentCreate");
 
         try {
+            console.time("post buy: paymentToken");
+
             const pstr = await paymentToken(await getPaymentServiceURL(db), {
                 shop_id: PaymentServiceIsucariShopID.toString(),
                 token: req.body.token,
@@ -1173,6 +1188,9 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
                 await db.release();
                 return;
             }
+            console.timeEnd("post buy: paymentToken");
+
+            console.time("post buy: insert shippiing");
 
             await db.query(
                 "INSERT INTO `shippings` (`transaction_evidence_id`, `status`, `item_name`, `item_id`, `reserve_id`, `reserve_time`, `to_address`, `to_name`, `from_address`, `from_name`, `img_binary`) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
@@ -1190,6 +1208,8 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
                     "",
                 ]
             );
+            console.timeEnd("post buy: insert shippiing");
+
         } catch (e) {
             replyError(reply, "payment service is failed", 500)
             await db.rollback();
@@ -1205,6 +1225,8 @@ async function postBuy(req: FastifyRequest, reply: FastifyReply<ServerResponse>)
 
     await db.commit();
     await db.release();
+
+    console.timeEnd("post buy: postBuy");
 
     reply.code(200)
         .type("application/json;charset=utf-8")
