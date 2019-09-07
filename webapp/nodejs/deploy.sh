@@ -5,13 +5,13 @@ git pull
 
 npm i
 
-sudo cp ../conf/nginx.conf /etc/nginx
+sudo cp ../../conf/nginx.conf /etc/nginx
 sudo systemctl restart nginx.service
 
-sudo cp ../conf/my.cnf /etc/mysql
+sudo cp ../../conf/my.cnf /etc/mysql
 sudo systemctl restart mysql.service
 
-sudo cp ../conf/isucari.nodejs.service /etc/systemd/system/
+sudo cp ../../conf/isucari.nodejs.service /etc/systemd/system/
 
 sudo systemctl daemon-reload
 sudo systemctl restart isucari.nodejs.service
