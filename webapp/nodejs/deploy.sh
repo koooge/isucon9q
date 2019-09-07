@@ -3,7 +3,7 @@
 cd /home/isucon/isucari/webapp/nodejs
 git pull
 
-npm i
+/home/isucon/local/node/bin/npm i
 
 /home/isucon/isucari/webapp/nodejs/node_modules/.bin/tsc
 
